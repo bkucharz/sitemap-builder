@@ -1,6 +1,7 @@
 package link
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -19,18 +20,44 @@ func Parse(r io.Reader) ([]Link, error) {
 		fmt.Printf("Cannot parse HTML file %v\n", r)
 		os.Exit(1)
 	}
-	dfs(doc, "")
-	return nil, nil
+	linkNodes := filterLinkNodes(doc)
+	links := getLinks(linkNodes)
+	return links, nil
 }
 
-func dfs(node *html.Node, padding string) {
-	msg := node.Data
-	if node.Type == html.ElementNode {
-		msg = "<" + msg + ">"
+func filterLinkNodes(node *html.Node) []*html.Node {
+	if node.Type == html.ElementNode && node.Data == "a" {
+		return []*html.Node{node}
 	}
-	fmt.Println(padding, msg)
+	var ret []*html.Node
+	for c := node.FirstChild; c != nil; c = c.NextSibling {
+		ret = append(ret, filterLinkNodes(c)...)
+	}
+	return ret
+}
 
-	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		dfs(child, padding+"  ")
+func getLink(node *html.Node) (Link, error) {
+	var href, text string
+	for _, attr := range node.Attr {
+		if attr.Key == "href" {
+			href = attr.Val
+			text = node.FirstChild.Data
+		}
 	}
+	if href == "" {
+		return Link{}, errors.New("node missing href attribute")
+	}
+	return Link{Href: href, Text: text}, nil
+}
+
+func getLinks(nodes []*html.Node) []Link {
+	var links []Link
+	for _, node := range nodes {
+		link, err := getLink(node)
+		if err != nil {
+			continue
+		}
+		links = append(links, link)
+	}
+	return links
 }
