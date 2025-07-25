@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"golang.org/x/net/html"
 )
@@ -37,17 +38,30 @@ func filterLinkNodes(node *html.Node) []*html.Node {
 }
 
 func getLink(node *html.Node) (Link, error) {
-	var href, text string
+	link := Link{}
 	for _, attr := range node.Attr {
 		if attr.Key == "href" {
-			href = attr.Val
-			text = node.FirstChild.Data
+			link.Href = attr.Val
+			break
 		}
 	}
-	if href == "" {
+	if link.Href == "" {
 		return Link{}, errors.New("node missing href attribute")
 	}
-	return Link{Href: href, Text: text}, nil
+	text := getText(node)
+	link.Text = strings.Join(strings.Fields(text), " ")
+	return link, nil
+}
+
+func getText(node *html.Node) string {
+	if node.Type == html.TextNode {
+		return node.Data
+	}
+	var text string
+	for c := node.FirstChild; c != nil; c = c.NextSibling {
+		text += getText(c)
+	}
+	return text
 }
 
 func getLinks(nodes []*html.Node) []Link {
