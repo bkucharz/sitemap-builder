@@ -1,70 +1,28 @@
-package main
+package crawler
 
 import (
-	"encoding/xml"
-	"flag"
 	"fmt"
 	"maps"
 	"net/http"
 	"net/url"
-	"os"
-	"sitemap/link"
+	"sitemap/internal/link"
 	"slices"
 	"strings"
 )
 
-const xmlns = "http://www.sitemaps.org/schemas/sitemap/0.9"
-
-type loc struct {
-	Value string `xml:"loc"`
-}
-
-type urlSet struct {
-	URLs  []loc  `xml:"url"`
-	Xmlns string `xml:"xmlns,attr"`
-}
-
-func main() {
-	urlFlag := flag.String("url", "https://go.dev/", "the url for a sitemap build")
-	depth := flag.Int("depth", 1, "depth of fetching")
-	flag.Parse()
-	*urlFlag = strings.TrimSuffix(*urlFlag, "/")
-
-	startURL, err := url.Parse(*urlFlag)
-	if err != nil {
-		fmt.Printf("Cannot parse url: %v\n", *urlFlag)
-		os.Exit(1)
-	}
-
-	paths, _ := Crawl(*startURL, *depth)
-	toXML := urlSet{
-		Xmlns: xmlns,
-	}
-	for _, p := range paths {
-		toXML.URLs = append(toXML.URLs, loc{startURL.Host + p})
-	}
-
-	out, err := xml.MarshalIndent(toXML, "", " ")
-	if err != nil {
-		fmt.Printf("Error while creating XML\n")
-		os.Exit(1)
-	}
-	fmt.Println(xml.Header + string(out))
-}
-
-func Fetch(fetchURL *url.URL) []*url.URL {
+func Fetch(fetchURL *url.URL) ([]*url.URL, error) {
 	response, err := http.Get(fetchURL.String())
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed fetching website: %s", fetchURL.String())
 	}
 	defer response.Body.Close()
 
 	links, err := link.Parse(response.Body)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed parsing website content: %s", fetchURL.String())
 	}
 
-	return filterURLs(normalizeLinks(links, fetchURL), withSameHost(fetchURL))
+	return filterURLs(normalizeLinks(links, fetchURL), withSameHost(fetchURL)), nil
 
 }
 
@@ -80,7 +38,10 @@ func Crawl(startURL url.URL, depth int) ([]string, error) {
 				continue
 			}
 			seen[currentURL.Path] = struct{}{}
-			urls := Fetch(currentURL)
+			urls, err := Fetch(currentURL)
+			if err != nil {
+				continue
+			}
 			queue = append(queue, urls...)
 		}
 		depth--

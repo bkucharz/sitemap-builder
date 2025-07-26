@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -18,8 +17,7 @@ type Link struct {
 func Parse(r io.Reader) ([]Link, error) {
 	doc, err := html.Parse(r)
 	if err != nil {
-		fmt.Printf("Cannot parse HTML file %v\n", r)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
 	linkNodes := filterLinkNodes(doc)
 	links := getLinks(linkNodes)
