@@ -17,20 +17,20 @@ func main() {
 	depth := flag.Int("depth", 1, "depth of fetching")
 	flag.Parse()
 	*urlFlag = strings.TrimSuffix(*urlFlag, "/")
-	startUrl, err := url.Parse(*urlFlag)
+	startURL, err := url.Parse(*urlFlag)
 	if err != nil {
 		fmt.Printf("Cannot parse url: %v\n", *urlFlag)
 		os.Exit(1)
 	}
-	paths, _ := Crawl(*startUrl, *depth)
+	paths, _ := Crawl(*startURL, *depth)
 	for _, p := range paths {
 		fmt.Println(p)
 	}
 
 }
 
-func Fetch(fetchUrl *url.URL) []*url.URL {
-	response, err := http.Get(fetchUrl.String())
+func Fetch(fetchURL *url.URL) []*url.URL {
+	response, err := http.Get(fetchURL.String())
 	if err != nil {
 		panic(err)
 	}
@@ -41,7 +41,7 @@ func Fetch(fetchUrl *url.URL) []*url.URL {
 		panic(err)
 	}
 
-	return filterUrls(normalizeLinks(links, fetchUrl), withSameHost(fetchUrl))
+	return filterURLs(normalizeLinks(links, fetchURL), withSameHost(fetchURL))
 
 }
 
@@ -68,39 +68,39 @@ func Crawl(startURL url.URL, depth int) ([]string, error) {
 func normalizeLinks(links []link.Link, base *url.URL) []*url.URL {
 	urls := make([]*url.URL, 0, len(links))
 	for _, link := range links {
-		destUrl, err := url.Parse(link.Href)
-		destUrl.Fragment = ""
-		destUrl.RawQuery = ""
+		destURL, err := url.Parse(link.Href)
+		destURL.Fragment = ""
+		destURL.RawQuery = ""
 
 		if err != nil {
 			fmt.Printf("Cannot parse URL: %v\n", link.Href)
 			continue
 		}
 
-		if destUrl.Host == "" {
-			destUrl.Host = base.Host
+		if destURL.Host == "" {
+			destURL.Host = base.Host
 		}
-		if destUrl.Scheme == "" {
-			destUrl.Scheme = base.Scheme
+		if destURL.Scheme == "" {
+			destURL.Scheme = base.Scheme
 		}
-		destUrl.Path = strings.TrimSuffix(destUrl.Path, "/")
-		urls = append(urls, destUrl)
+		destURL.Path = strings.TrimSuffix(destURL.Path, "/")
+		urls = append(urls, destURL)
 	}
 	return urls
 }
 
-func filterUrls(urls []*url.URL, keepFn func(*url.URL) bool) []*url.URL {
-	var filtered []*url.URL
-	for _, url := range urls {
-		if keepFn(url) {
-			filtered = append(filtered, url)
+func filterURLs(urls []*url.URL, keepFn func(*url.URL) bool) []*url.URL {
+	filtered := make([]*url.URL, 0, len(urls))
+	for _, u := range urls {
+		if keepFn(u) {
+			filtered = append(filtered, u)
 		}
 	}
 	return filtered
 }
 
-func withSameHost(baseUrl *url.URL) func(*url.URL) bool {
+func withSameHost(baseURL *url.URL) func(*url.URL) bool {
 	return func(url *url.URL) bool {
-		return (url.Host == baseUrl.Host && strings.HasPrefix(url.Scheme, "http"))
+		return (url.Host == baseURL.Host && strings.HasPrefix(url.Scheme, "http"))
 	}
 }
