@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"sitemap/internal/link"
 	"testing"
+
+	"github.com/bkucharz/sitemap-builder/internal/link"
 )
 
 func TestNormalizeLinks(t *testing.T) {

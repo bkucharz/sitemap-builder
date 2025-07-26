@@ -1,6 +1,6 @@
-module sitemap
+module github.com/bkucharz/sitemap-builder
 
-go 1.23.0
+go 1.23.0 // Use stable Go version
 
 toolchain go1.23.11
 

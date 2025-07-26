@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"sitemap/internal/crawler"
 	"strings"
+
+	"github.com/bkucharz/sitemap-builder/internal/crawler"
 )
 
 const xmlns = "http://www.sitemaps.org/schemas/sitemap/0.9"

@@ -5,9 +5,10 @@ import (
 	"maps"
 	"net/http"
 	"net/url"
-	"sitemap/internal/link"
 	"slices"
 	"strings"
+
+	"github.com/bkucharz/sitemap-builder/internal/link"
 )
 
 func Fetch(fetchURL *url.URL) ([]*url.URL, error) {
